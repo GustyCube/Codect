@@ -1,0 +1,316 @@
+/* 
+  -------------
+  COLOR VARIABLES
+  -------------
+*/
+:root {
+    /* Light theme colors */
+    --color-bg: #f5f6fa;
+    --color-text: #333;
+    --color-section-bg: #eef2f7;
+    --color-nav-bg: #fff;
+    --color-card-bg: #fff;
+    --color-primary: #4a90e2;
+    --color-secondary-text: #555;
+    --color-shadow: rgba(0, 0, 0, 0.1);
+  }
+  
+  /* 
+    Dark theme overrides 
+  */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-bg: #1d1d1d;
+      --color-text: #f0f0f0;
+      --color-section-bg: #2a2a2a;
+      --color-nav-bg: #333;
+      --color-card-bg: #2a2a2a;
+      --color-primary: #4a90e2; /* Keep brand color consistent */
+      --color-secondary-text: #ccc;
+      --color-shadow: rgba(255, 255, 255, 0.05);
+    }
+  }
+  
+  /* 
+    -------------
+    GENERAL STYLES
+    -------------
+  */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: var(--color-bg);
+    color: var(--color-text);
+    line-height: 1.6;
+  }
+  /* NAVBAR */
+  .navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--color-nav-bg);
+    padding: 1rem 2rem;
+    box-shadow: 0 1px 5px var(--color-shadow);
+  }
+  .logo {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--color-primary);
+  }
+  .nav-links {
+    list-style: none;
+    display: flex;
+    gap: 1.5rem;
+  }
+  .nav-links li a {
+    text-decoration: none;
+    color: var(--color-text);
+    font-weight: 500;
+    transition: color 0.3s;
+  }
+  .nav-links li a:hover {
+    color: var(--color-primary);
+  }
+  .cta-btn {
+    padding: 0.7rem 1.2rem;
+    background: var(--color-primary);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.3s;
+  }
+  .cta-btn:hover {
+    background: #3a7ac2;
+  }
+  
+  /* HERO SECTION */
+  .hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 3rem 2rem;
+    background: var(--color-section-bg);
+  }
+  .hero-content {
+    max-width: 600px;
+  }
+  .hero-content h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: var(--color-text);
+  }
+  .hero-content p {
+    margin-bottom: 1.5rem;
+    color: var(--color-secondary-text);
+  }
+  .hero-cta {
+    background: var(--color-primary);
+    color: #fff;
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.3s;
+  }
+  .hero-cta:hover {
+    background: #3a7ac2;
+  }
+  .hero-image img {
+    width: 100%;
+    max-width: 500px;
+    border-radius: 8px;
+  }
+  
+  /* FEATURES SECTION */
+  .features {
+    text-align: center;
+    padding: 4rem 2rem;
+  }
+  .features h2 {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    color: var(--color-text);
+  }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 2rem;
+  }
+  .feature-card {
+    background: var(--color-card-bg);
+    border-radius: 8px;
+    padding: 2rem;
+    box-shadow: 0 4px 12px var(--color-shadow);
+    transition: transform 0.3s;
+  }
+  .feature-card:hover {
+    transform: translateY(-5px);
+  }
+  .feature-card img {
+    width: 60px;
+    margin-bottom: 1rem;
+  }
+  .feature-card h3 {
+    margin-bottom: 1rem;
+    color: var(--color-primary);
+  }
+  .feature-card p {
+    color: var(--color-secondary-text);
+  }
+  
+  /* PRICING SECTION */
+  .pricing {
+    background: var(--color-bg);
+    text-align: center;
+    padding: 4rem 2rem;
+  }
+  .pricing h2 {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    color: var(--color-text);
+  }
+  .pricing-plans {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  .plan {
+    background: var(--color-card-bg);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px var(--color-shadow);
+    padding: 2rem;
+    transition: transform 0.3s;
+  }
+  .plan:hover {
+    transform: translateY(-5px);
+  }
+  .highlight {
+    border: 2px solid var(--color-primary);
+  }
+  .price {
+    font-size: 1.5rem;
+    color: var(--color-primary);
+    margin: 1rem 0;
+  }
+  .plan ul {
+    list-style: none;
+    margin: 1rem 0;
+    padding: 0;
+    color: var(--color-secondary-text);
+  }
+  .plan-btn {
+    padding: 0.7rem 1.2rem;
+    background: var(--color-primary);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    margin-top: 1rem;
+    transition: background 0.3s;
+  }
+  .plan-btn:hover {
+    background: #3a7ac2;
+  }
+  
+  /* CONTACT SECTION */
+  .contact {
+    padding: 4rem 2rem;
+    text-align: center;
+  }
+  .contact h2 {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    color: var(--color-text);
+  }
+  .contact-form {
+    max-width: 600px;
+    margin: 0 auto;
+    display: grid;
+    gap: 1rem;
+  }
+  .contact-form input,
+  .contact-form textarea {
+    width: 100%;
+    padding: 1rem;
+    border: 1px solid #ddd; 
+    /* On dark mode, the text and background color will still be updated 
+       but the border might need a custom color if desired */
+    border-radius: 4px;
+    font-family: inherit;
+    color: var(--color-text);
+    background: var(--color-bg);
+  }
+  .contact-form button {
+    padding: 0.7rem 1.2rem;
+    background: var(--color-primary);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .contact-form button:hover {
+    background: #3a7ac2;
+  }
+  
+  /* FOOTER */
+  .footer {
+    background: var(--color-nav-bg);
+    text-align: center;
+    padding: 1rem;
+    color: var(--color-secondary-text);
+  }
+  
+  /* MODAL */
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: none; /* hidden by default */
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+  }
+  .modal-content {
+    background: var(--color-card-bg);
+    padding: 2rem;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    position: relative;
+    text-align: center;
+  }
+  .close-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--color-text);
+  }
+  .analyze-btn {
+    padding: 0.7rem 1.2rem;
+    background: var(--color-primary);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 1rem;
+  }
+  .analyze-btn:hover {
+    background: #3a7ac2;
+  }
+  
