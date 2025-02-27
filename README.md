@@ -63,7 +63,7 @@ We welcome contributions! Feel free to:
 - Expand API functionality.
 
 ## License
-Codect is licensed under the Apache 2.0 license. You are free to modify and distribute the project as needed.
+Codect is licensed under the GNU General Public v3.0 license. You are free to modify and distribute the project as needed.
 
 ## Contact
 For questions or contributions, open an issue on GitHub or reach out to `gc@gustycube.xyz`.
