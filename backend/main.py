@@ -132,8 +132,7 @@ def classify_code(features):
     # Based on the accumulated score, we set an arbitrary threshold.
     if score >= 3:
         return "AI-Generated Code"
-    else:
-        return "Likely Human-Written Code"
+    return "Likely Human-Written Code"
 
 def analyze_code(code):
     """
