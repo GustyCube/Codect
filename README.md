@@ -11,6 +11,10 @@ Codect is a free and open-source tool designed to detect whether a piece of code
 - **Local & Web API Support**: Can be run locally or accessed via Flask-based API.
 - **Fully Open Source**: No paywalls, no restrictions—improve and contribute to the project!
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=GustyCube/Codect&type=Date)](https://star-history.com/#GustyCube/Codect&Date)
+
 ## Installation
 To install Codect and run it locally, follow these steps:
 
