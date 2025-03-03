@@ -1,5 +1,5 @@
 # Codect: AI-Generated Code Detection
-
+[![DeepSource](https://app.deepsource.com/gh/GustyCube/Codect.svg/?label=active+issues&show_trend=true&token=UOiRrqqUZoWYwfD_tPL8ifiy)](https://app.deepsource.com/gh/GustyCube/Codect/) <a href="LICENSE"><img src="https://img.shields.io/github/license/GustyCube/Codect" alt="License"></a>
 ## Overview
 Codect is a free and open-source tool designed to detect whether a piece of code was written by an AI or a human. It supports multiple programming languages and provides detailed insights based on various code features such as entropy, comment ratio, AST complexity, and more.
 
@@ -11,13 +11,17 @@ Codect is a free and open-source tool designed to detect whether a piece of code
 - **Local & Web API Support**: Can be run locally or accessed via Flask-based API.
 - **Fully Open Source**: No paywalls, no restrictions—improve and contribute to the project!
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=GustyCube/Codect&type=Date)](https://star-history.com/#GustyCube/Codect&Date)
+
 ## Installation
 To install Codect and run it locally, follow these steps:
 
 ```bash
 # Clone the repository
 git clone https://github.com/GustyCube/Codect.git
-cd codect
+cd Codect
 
 # Install dependencies
 pip install -r requirements.txt
@@ -63,7 +67,7 @@ We welcome contributions! Feel free to:
 - Expand API functionality.
 
 ## License
-Codect is licensed under the MIT License. You are free to modify and distribute the project as needed.
+Codect is licensed under the GNU General Public v3.0 license. You are free to modify and distribute the project as needed.
 
 ## Contact
 For questions or contributions, open an issue on GitHub or reach out to `gc@gustycube.xyz`.
