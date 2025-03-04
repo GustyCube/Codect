@@ -44,7 +44,7 @@ class JavaScriptFeatureExtractor:
         """Counts the number of comment lines in the JavaScript code."""
         single_line_comments = re.findall(r'\/\/.*', self.code)
         multi_line_comments = re.findall(r'\/\*[\s\S]*?\*\/', self.code)
-        
+
         return len(single_line_comments) + sum(c.count('\n') + 1 for c in multi_line_comments)
 
     def comment_ratio(self):
@@ -89,18 +89,18 @@ class JavaScriptFeatureExtractor:
         def traverse_ast(node, depth=0):
             if not node:
                 return
-                
+
             features["max_depth"] = max(features["max_depth"], depth)
-            
+
             if node.type in ['FunctionDeclaration', 'FunctionExpression', 'ArrowFunctionExpression']:
                 features["function_count"] += 1
-                
+
             if node.type in ['ForStatement', 'ForInStatement', 'ForOfStatement', 'WhileStatement', 'DoWhileStatement']:
                 features["loop_count"] += 1
-                
+
             if node.type == 'TryStatement':
                 features["try_catch_count"] += 1
-                
+
             for key in node:
                 if isinstance(node[key], dict) and 'type' in node[key]:
                     traverse_ast(node[key], depth + 1)
@@ -111,7 +111,7 @@ class JavaScriptFeatureExtractor:
 
         ast_dict = json.loads(json.dumps(self.ast, default=lambda obj: obj.__dict__))
         traverse_ast(ast_dict)
-        
+
         return features
 
     def extract_features(self):
