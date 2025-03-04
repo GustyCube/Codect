@@ -13,17 +13,17 @@ def basic():
     data = request.get_json()
     if not data or 'code' not in data:
         return jsonify({"error": "No code provided."}), 400
-    
+
     code = data['code']
     language = data.get('language', 'python').lower()
-    
+
     if language == 'python':
         features, classification = analyze_python_code(code)
     elif language == 'javascript':
         features, classification = analyze_javascript_code(code)
     else:
         return jsonify({"error": f"Unsupported language: {language}"}), 400
-    
+
     result = 1 if classification == "AI-Generated Code" else 0
     return jsonify({"result": result})
 
@@ -35,17 +35,17 @@ def premium():
     data = request.get_json()
     if not data or 'code' not in data:
         return jsonify({"error": "No code provided."}), 400
-    
+
     code = data['code']
     language = data.get('language', 'python').lower()
-    
+
     if language == 'python':
         features, classification = analyze_python_code(code)
     elif language == 'javascript':
         features, classification = analyze_javascript_code(code)
     else:
         return jsonify({"error": f"Unsupported language: {language}"}), 400
-    
+
     result = 1 if classification == "AI-Generated Code" else 0
 
     response = {"result": result, "language": language}
