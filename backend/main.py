@@ -10,7 +10,6 @@ def basic():
     Basic route: returns a JSON with just the classification result.
     Returns 1 if AI-generated, 0 if human-written.
     """
-
     data = request.get_json()
     if not data or 'code' not in data:
         return jsonify({"error": "No code provided."}), 400
@@ -33,7 +32,6 @@ def premium():
     """
     Premium route: returns a JSON with the classification result and all extracted features.
     """
-
     data = request.get_json()
     if not data or 'code' not in data:
         return jsonify({"error": "No code provided."}), 400
