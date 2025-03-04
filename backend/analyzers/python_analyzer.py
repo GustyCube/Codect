@@ -16,7 +16,6 @@ class PythonFeatureExtractor:
 
     def tokenize_code(self):
         """Lexically tokenize the code and count token frequencies."""
-
         try:
             token_generator = tokenize.tokenize(BytesIO(self.code.encode('utf-8')).readline)
             for tok in token_generator:
@@ -33,7 +32,6 @@ class PythonFeatureExtractor:
         Calculates the entropy of the token distribution.
         Lower entropy may indicate overly consistent (potentially AI-generated) code.
         """
-
         total = len(self.tokens)
         if total == 0:
             return 0
@@ -45,13 +43,11 @@ class PythonFeatureExtractor:
 
     def count_comments(self):
         """Counts the number of comment lines in the code."""
-
         comment_lines = [line for line in self.lines if line.strip().startswith("#")]
         return len(comment_lines)
 
     def comment_ratio(self):
         """Calculates the ratio of comment lines to total lines."""
-
         total_lines = len(self.lines)
         if total_lines == 0:
             return 0
@@ -65,7 +61,6 @@ class PythonFeatureExtractor:
           - Try/except block count
           - Maximum depth of the AST (as a proxy for complexity)
         """
-
         try:
             tree = ast.parse(self.code)
         except Exception as e:
@@ -91,7 +86,6 @@ class PythonFeatureExtractor:
         """
         Runs all feature extraction methods and returns a dictionary with all metrics.
         """
-
         self.tokenize_code()
         token_entropy = self.calculate_token_entropy()
         comment_ratio = self.comment_ratio()
@@ -113,7 +107,6 @@ def classify_python_code(features):
     A heuristic-based classifier that uses extracted features to determine the likelihood of AI-generated Python code.
     Returns a score; if the score is high enough, we consider the code AI-generated.
     """
-
     score = 0
 
     if features["token_entropy"] < 3.5:
@@ -139,7 +132,6 @@ def analyze_python_code(code):
     """
     Main function that extracts features from the Python code and returns both the feature dictionary and a classification.
     """
-
     extractor = PythonFeatureExtractor(code)
     features = extractor.extract_features()
     classification = classify_python_code(features)
