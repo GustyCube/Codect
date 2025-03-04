@@ -71,7 +71,7 @@ class JavaScriptFeatureExtractor:
         - Try/catch block count
         - Maximum AST depth
         """
-        
+
         if not self.parse_ast():
             return {
                 "function_count": 0, 

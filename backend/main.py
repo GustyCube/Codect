@@ -33,7 +33,7 @@ def premium():
     """
     Premium route: returns a JSON with the classification result and all extracted features.
     """
-    
+
     data = request.get_json()
     if not data or 'code' not in data:
         return jsonify({"error": "No code provided."}), 400
