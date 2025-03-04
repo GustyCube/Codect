@@ -7,7 +7,7 @@ class PythonFeatureExtractor:
     """
     Extracts various features from Python source code to help differentiate AI-generated code from human-written code.
     """
-    
+
     def __init__(self, code):
         self.code = code
         self.lines = code.splitlines()
@@ -139,7 +139,7 @@ def analyze_python_code(code):
     """
     Main function that extracts features from the Python code and returns both the feature dictionary and a classification.
     """
-    
+
     extractor = PythonFeatureExtractor(code)
     features = extractor.extract_features()
     classification = classify_python_code(features)
