@@ -71,6 +71,7 @@ class JavaScriptFeatureExtractor:
         - Try/catch block count
         - Maximum AST depth
         """
+        
         if not self.parse_ast():
             return {
                 "function_count": 0, 
@@ -118,6 +119,7 @@ class JavaScriptFeatureExtractor:
         """
         Runs all feature extraction methods and returns a dictionary with all metrics.
         """
+
         self.tokenize_code()
         token_entropy = self.calculate_token_entropy()
         comment_ratio = self.comment_ratio()
@@ -139,6 +141,7 @@ def classify_javascript_code(features):
     A heuristic-based classifier that uses extracted features to determine the likelihood of AI-generated JavaScript code.
     Returns a score; if the score is high enough, we consider the code AI-generated.
     """
+
     score = 0
 
     if features["token_entropy"] < 3.8:  
@@ -164,6 +167,7 @@ def analyze_javascript_code(code):
     """
     Main function that extracts features from the JavaScript code and returns both the feature dictionary and a classification.
     """
+
     extractor = JavaScriptFeatureExtractor(code)
     features = extractor.extract_features()
     classification = classify_javascript_code(features)
