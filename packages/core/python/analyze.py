@@ -26,23 +26,38 @@ def main():
 
         result = 1 if classification == "AI-Generated Code" else 0
 
+        # Map Python analyzer features to expected TypeScript interface
+        mapped_features = {
+            "token_entropy": features.get("token_entropy", 0),
+            "comment_ratio": features.get("comment_ratio", 0),
+            "total_lines": len(code.splitlines()),
+            "function_count": features.get("function_count", 0),
+            "loop_count": features.get("loop_count", 0),
+            "try_except_count": features.get("try_except_count", 0),
+            "max_ast_depth": features.get("max_ast_depth", 0)
+        }
+        
         if mode == 'basic':
             response = {
                 "result": result,
                 "classification": classification,
                 "language": language,
                 "features": {
-                    "token_entropy": features.get("token_entropy", 0),
-                    "comment_ratio": features.get("comment_ratio", 0),
-                    "total_lines": features.get("total_lines", 0)
+                    "token_entropy": mapped_features["token_entropy"],
+                    "comment_ratio": mapped_features["comment_ratio"],
+                    "total_lines": mapped_features["total_lines"]
                 }
             }
         else:  # detailed
+            # Include all mapped features plus additional ones for detailed mode
+            detailed_features = mapped_features.copy()
+            detailed_features.update(features)  # Add all other features
+            
             response = {
                 "result": result,
                 "classification": classification,
                 "language": language,
-                "features": features
+                "features": detailed_features
             }
 
         print(json.dumps(response))

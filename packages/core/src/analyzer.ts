@@ -1,5 +1,5 @@
-import { PythonShell } from 'python-shell';
 import * as path from 'path';
+import { spawn } from 'child_process';
 import { AnalysisResult, AnalyzerOptions, SupportedLanguage } from './types';
 import { detectLanguage } from './language-detector';
 
@@ -23,30 +23,43 @@ export class CodeAnalyzer {
 
     const scriptPath = path.join(this.pythonPath, 'analyze.py');
     
-    const pyOptions = {
-      mode: 'json' as const,
-      pythonPath: 'python3',
-      pythonOptions: ['-u'],
-      scriptPath: this.pythonPath,
-      args: [language, options.detailed ? 'detailed' : 'basic']
-    };
-
+    // Use spawn instead of PythonShell for better control
     return new Promise((resolve, reject) => {
-      const pyshell = new PythonShell(scriptPath, pyOptions);
+      const args = [scriptPath, language, options.detailed ? 'detailed' : 'basic'];
+      const pythonProcess = spawn('python3', args);
       
-      pyshell.send(code);
+      let stdout = '';
+      let stderr = '';
       
-      pyshell.on('message', (message: any) => {
-        resolve(message as AnalysisResult);
+      pythonProcess.stdout.on('data', (data) => {
+        stdout += data.toString();
       });
       
-      pyshell.on('error', (err) => {
+      pythonProcess.stderr.on('data', (data) => {
+        stderr += data.toString();
+      });
+      
+      pythonProcess.on('close', (exitCode) => {
+        if (exitCode !== 0) {
+          reject(new Error(`Python process exited with code ${exitCode}: ${stderr}`));
+          return;
+        }
+        
+        try {
+          const result = JSON.parse(stdout);
+          resolve(result as AnalysisResult);
+        } catch (err) {
+          reject(new Error(`Failed to parse Python output: ${stdout}`));
+        }
+      });
+      
+      pythonProcess.on('error', (err) => {
         reject(err);
       });
       
-      pyshell.end((err) => {
-        if (err) reject(err);
-      });
+      // Write code to stdin and close
+      pythonProcess.stdin.write(code);
+      pythonProcess.stdin.end();
     });
   }
 

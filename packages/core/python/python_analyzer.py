@@ -26,6 +26,7 @@ class ImprovedPythonAnalyzer:
             return self._get_default_features()
 
         # Extract different feature categories
+        features.update(self._extract_basic_metrics())
         features.update(self._extract_structural_patterns())
         features.update(self._extract_naming_patterns())
         features.update(self._extract_consistency_metrics())
@@ -33,6 +34,81 @@ class ImprovedPythonAnalyzer:
         features.update(self._extract_ai_specific_patterns())
 
         return features
+
+    def _extract_basic_metrics(self) -> Dict[str, Union[float, int]]:
+        """Extract basic code metrics for TypeScript interface compatibility"""
+        features = {
+            'function_count': 0,
+            'loop_count': 0,
+            'try_except_count': 0,
+            'max_ast_depth': 0,
+            'token_entropy': 0.0,
+            'comment_ratio': 0.0,
+            'total_lines': len(self.lines)
+        }
+        
+        if not self.tree:
+            return features
+        
+        # Count functions
+        for node in ast.walk(self.tree):
+            if isinstance(node, ast.FunctionDef) or isinstance(node, ast.AsyncFunctionDef):
+                features['function_count'] += 1
+            elif isinstance(node, (ast.For, ast.While, ast.AsyncFor)):
+                features['loop_count'] += 1
+            elif isinstance(node, ast.Try):
+                features['try_except_count'] += 1
+        
+        # Calculate max AST depth
+        features['max_ast_depth'] = self._calculate_max_depth(self.tree)
+        
+        # Calculate token entropy
+        tokens = self._extract_tokens()
+        if tokens:
+            features['token_entropy'] = self._calculate_entropy(tokens)
+        
+        # Calculate comment ratio
+        comment_lines = sum(1 for line in self.lines if line.strip().startswith('#'))
+        if self.lines:
+            features['comment_ratio'] = comment_lines / len(self.lines)
+        
+        return features
+    
+    def _calculate_max_depth(self, node, depth=0):
+        """Calculate maximum depth of AST"""
+        max_depth = depth
+        for child in ast.iter_child_nodes(node):
+            child_depth = self._calculate_max_depth(child, depth + 1)
+            max_depth = max(max_depth, child_depth)
+        return max_depth
+    
+    def _extract_tokens(self):
+        """Extract all tokens from code"""
+        import tokenize
+        import io
+        tokens = []
+        try:
+            readline = io.StringIO(self.code).readline
+            for tok in tokenize.generate_tokens(readline):
+                if tok.type not in (tokenize.INDENT, tokenize.DEDENT, tokenize.NEWLINE, 
+                                    tokenize.NL, tokenize.COMMENT, tokenize.ENCODING):
+                    tokens.append(tok.string)
+        except:
+            pass
+        return tokens
+    
+    def _calculate_entropy(self, tokens):
+        """Calculate Shannon entropy of tokens"""
+        if not tokens:
+            return 0.0
+        counter = Counter(tokens)
+        total = len(tokens)
+        entropy = 0.0
+        for count in counter.values():
+            if count > 0:
+                p = count / total
+                entropy -= p * math.log2(p)
+        return entropy
 
     def _extract_structural_patterns(self) -> Dict[str, Union[bool, float]]:
         """Extract structural code patterns"""

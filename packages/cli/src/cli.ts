@@ -67,13 +67,13 @@ function displayResults(result: any, detailed: boolean = false) {
     // Feature analysis
     const features = result.features;
     table.push(
-      [chalk.dim('Token Entropy'), chalk.white(features.token_entropy.toFixed(2))],
-      [chalk.dim('Comment Ratio'), chalk.white((features.comment_ratio * 100).toFixed(1) + '%')],
-      [chalk.dim('Total Lines'), chalk.white(features.total_lines.toString())],
-      [chalk.dim('Functions'), chalk.white(features.function_count.toString())],
-      [chalk.dim('Loops'), chalk.white(features.loop_count.toString())],
-      [chalk.dim('Try/Except Blocks'), chalk.white(features.try_except_count.toString())],
-      [chalk.dim('Max AST Depth'), chalk.white(features.max_ast_depth.toString())]
+      [chalk.dim('Token Entropy'), chalk.white(features.token_entropy?.toFixed(2) ?? 'N/A')],
+      [chalk.dim('Comment Ratio'), chalk.white(features.comment_ratio != null ? (features.comment_ratio * 100).toFixed(1) + '%' : 'N/A')],
+      [chalk.dim('Total Lines'), chalk.white(features.total_lines?.toString() ?? 'N/A')],
+      [chalk.dim('Functions'), chalk.white(features.function_count?.toString() ?? 'N/A')],
+      [chalk.dim('Loops'), chalk.white(features.loop_count?.toString() ?? 'N/A')],
+      [chalk.dim('Try/Except Blocks'), chalk.white(features.try_except_count?.toString() ?? 'N/A')],
+      [chalk.dim('Max AST Depth'), chalk.white(features.max_ast_depth?.toString() ?? 'N/A')]
     );
   }
 
@@ -207,6 +207,38 @@ program
   .action(async (file, options) => {
     showLogo();
     await analyzeFile(file, options.detailed);
+  });
+
+program
+  .command('snippet <code>')
+  .alias('s')
+  .description('Analyze a code snippet directly')
+  .option('-d, --detailed', 'Show detailed analysis', false)
+  .option('-l, --language <language>', 'Specify language (python/javascript)', 'python')
+  .action(async (code, options) => {
+    showLogo();
+    await analyzeCode(code, options.language, options.detailed);
+  });
+
+program
+  .command('stdin')
+  .description('Analyze code from stdin')
+  .option('-d, --detailed', 'Show detailed analysis', false)
+  .option('-l, --language <language>', 'Specify language (python/javascript)', 'python')
+  .action(async (options) => {
+    showLogo();
+    
+    // Read from stdin
+    let code = '';
+    process.stdin.setEncoding('utf8');
+    
+    process.stdin.on('data', (chunk) => {
+      code += chunk;
+    });
+    
+    process.stdin.on('end', async () => {
+      await analyzeCode(code, options.language, options.detailed);
+    });
   });
 
 program
