@@ -53,7 +53,7 @@ export class CodeAnalyzer {
   async analyzeFile(filePath: string, options: AnalyzerOptions = {}): Promise<AnalysisResult> {
     const fs = await import('fs/promises');
     const code = await fs.readFile(filePath, 'utf-8');
-    const detectedLanguage = options.language || detectLanguage(code, filePath);
+    const detectedLanguage = options.language || detectLanguage(code, filePath) || undefined;
     
     return this.analyze(code, { ...options, language: detectedLanguage });
   }
