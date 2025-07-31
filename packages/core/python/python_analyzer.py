@@ -237,7 +237,8 @@ class ImprovedPythonAnalyzer:
 
         return features
 
-    def _is_main_guard(self, node: ast.If) -> bool:
+    @staticmethod
+    def _is_main_guard(node: ast.If) -> bool:
         """Check if node is if __name__ == "__main__" """
         if not isinstance(node.test, ast.Compare):
             return False
@@ -250,7 +251,8 @@ class ImprovedPythonAnalyzer:
             return False
         return True
 
-    def _is_snake_case(self, name: str) -> bool:
+    @staticmethod
+    def _is_snake_case(name: str) -> bool:
         """Check if name follows snake_case convention"""
         return bool(re.match(r'^[a-z_][a-z0-9_]*$', name))
 
@@ -310,7 +312,8 @@ class ImprovedPythonAnalyzer:
         max_count = max(pattern_counts.values()) if pattern_counts else 0
         return min(max_count / len(patterns), 1.0)
 
-    def _std_dev(self, values: List[float]) -> float:
+    @staticmethod
+    def _std_dev(values: List[float]) -> float:
         """Calculate standard deviation without numpy"""
         if len(values) < 2:
             return 0.0
@@ -318,7 +321,8 @@ class ImprovedPythonAnalyzer:
         variance = sum((x - mean) ** 2 for x in values) / len(values)
         return math.sqrt(variance)
 
-    def _get_default_features(self) -> Dict[str, Union[bool, float, int]]:
+    @staticmethod
+    def _get_default_features() -> Dict[str, Union[bool, float, int]]:
         """Return default features when parsing fails"""
         return {
             'has_main_guard': False,
