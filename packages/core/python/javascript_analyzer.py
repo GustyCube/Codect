@@ -5,9 +5,7 @@ from collections import Counter
 from typing import Dict, List, Tuple, Union
 
 class ImprovedJavaScriptAnalyzer:
-    """
-    Enhanced JavaScript analyzer that detects AI-generated patterns
-    """
+    """Enhanced JavaScript analyzer that detects AI-generated patterns"""
 
     def __init__(self, code: str):
         self.code = code
@@ -348,9 +346,7 @@ class ImprovedJavaScriptAnalyzer:
 
 
 class ImprovedJSClassifier:
-    """
-    Weighted classification system for JavaScript
-    """
+    """Weighted classification system for JavaScript"""
 
     def __init__(self):
         # Feature weights based on importance
@@ -388,9 +384,7 @@ class ImprovedJSClassifier:
         }
 
     def classify(self, features: Dict[str, Union[bool, float, int, str]]) -> Tuple[str, float]:
-        """
-        Classify code and return result with confidence score
-        """
+        """Classify code and return result with confidence score"""
         score = 0.0
 
         # Calculate weighted score
@@ -421,9 +415,7 @@ class ImprovedJSClassifier:
 
 
 def analyze_javascript_code(code: str) -> Tuple[Dict[str, Union[bool, float, int, str]], str]:
-    """
-    Main JavaScript analysis function that returns features and classification
-    """
+    """Main JavaScript analysis function that returns features and classification"""
     analyzer = ImprovedJavaScriptAnalyzer(code)
     features = analyzer.extract_all_features()
 

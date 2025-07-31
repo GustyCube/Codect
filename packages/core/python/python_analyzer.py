@@ -358,9 +358,7 @@ class ImprovedPythonAnalyzer:
 
 
 class ImprovedClassifier:
-    """
-    Weighted classification system that considers feature importance
-    """
+    """Weighted classification system that considers feature importance"""
 
     def __init__(self):
         # Feature weights based on importance
@@ -393,9 +391,7 @@ class ImprovedClassifier:
         }
 
     def classify(self, features: Dict[str, Union[bool, float, int, str]]) -> Tuple[str, float]:
-        """
-        Classify code and return result with confidence score
-        """
+        """Classify code and return result with confidence score"""
         score = 0.0
 
         # Calculate weighted score
@@ -427,9 +423,7 @@ class ImprovedClassifier:
 
 
 def analyze_python_code(code: str) -> Tuple[Dict[str, Union[bool, float, int, str]], str]:
-    """
-    Main analysis function that returns features and classification
-    """
+    """Main analysis function that returns features and classification"""
     analyzer = ImprovedPythonAnalyzer(code)
     features = analyzer.extract_all_features()
 

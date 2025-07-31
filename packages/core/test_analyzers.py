@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-Test script for code analyzers
-"""
+"""Test script for code analyzers"""
 import sys
 sys.path.append('./python')
 
