@@ -2,7 +2,7 @@ import re
 import json
 import math
 from collections import Counter
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Tuple, Union
 
 class ImprovedJavaScriptAnalyzer:
     """
@@ -13,7 +13,7 @@ class ImprovedJavaScriptAnalyzer:
         self.code = code
         self.lines = code.splitlines()
         
-    def extract_all_features(self) -> Dict[str, Any]:
+    def extract_all_features(self) -> Dict[str, Union[bool, float, int, str]]:
         """Extract comprehensive features for classification"""
         features = {}
         
@@ -27,7 +27,7 @@ class ImprovedJavaScriptAnalyzer:
         
         return features
     
-    def _extract_structural_patterns(self) -> Dict[str, Any]:
+    def _extract_structural_patterns(self) -> Dict[str, Union[bool, float]]:
         """Extract JavaScript structural patterns"""
         features = {
             'uses_arrow_functions': False,
@@ -83,7 +83,7 @@ class ImprovedJavaScriptAnalyzer:
         
         return features
     
-    def _extract_naming_patterns(self) -> Dict[str, Any]:
+    def _extract_naming_patterns(self) -> Dict[str, Union[bool, float]]:
         """Analyze JavaScript naming patterns"""
         features = {
             'uses_camelCase_ratio': 0.0,
@@ -97,7 +97,7 @@ class ImprovedJavaScriptAnalyzer:
         
         # Extract variable and function names
         var_pattern = re.compile(r'(?:var|let|const|function)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)')
-        names = var_pattern.findall(self.code)
+        names: List[str] = var_pattern.findall(self.code)
         
         if not names:
             return features
@@ -127,7 +127,7 @@ class ImprovedJavaScriptAnalyzer:
         
         return features
     
-    def _extract_consistency_metrics(self) -> Dict[str, Any]:
+    def _extract_consistency_metrics(self) -> Dict[str, float]:
         """Measure JavaScript code consistency"""
         features = {
             'semicolon_consistency': 0.0,
@@ -159,7 +159,7 @@ class ImprovedJavaScriptAnalyzer:
             features['quote_consistency'] = max(single_quotes, double_quotes) / total_quotes
             
         # Indentation consistency
-        indents = []
+        indents: List[int] = []
         for line in self.lines:
             if line.strip():
                 indent = len(line) - len(line.lstrip())
@@ -177,7 +177,7 @@ class ImprovedJavaScriptAnalyzer:
         
         return features
     
-    def _extract_code_smell_indicators(self) -> Dict[str, Any]:
+    def _extract_code_smell_indicators(self) -> Dict[str, bool]:
         """Detect JavaScript code smells"""
         features = {
             'has_console_log': False,
@@ -229,7 +229,7 @@ class ImprovedJavaScriptAnalyzer:
         
         return features
     
-    def _extract_ai_specific_patterns(self) -> Dict[str, Any]:
+    def _extract_ai_specific_patterns(self) -> Dict[str, Union[bool, float]]:
         """Extract patterns specific to AI-generated JavaScript"""
         features = {
             'perfect_formatting_score': 0.0,
@@ -260,7 +260,7 @@ class ImprovedJavaScriptAnalyzer:
             
         return features
     
-    def _extract_js_specific_patterns(self) -> Dict[str, Any]:
+    def _extract_js_specific_patterns(self) -> Dict[str, Union[bool, str]]:
         """Extract JavaScript-specific patterns"""
         features = {
             'uses_jquery': False,
@@ -321,7 +321,7 @@ class ImprovedJavaScriptAnalyzer:
     def _calculate_pattern_repetition(self) -> float:
         """Calculate code pattern repetition"""
         # Extract code structure patterns
-        patterns = []
+        patterns: List[str] = []
         
         # Simple pattern extraction based on keywords
         keyword_pattern = re.compile(r'\b(if|for|while|function|const|let|var|return|class)\b')
@@ -385,7 +385,7 @@ class ImprovedJSClassifier:
             'meaningful_name_ratio': -0.5,
         }
         
-    def classify(self, features: Dict[str, Any]) -> Tuple[str, float]:
+    def classify(self, features: Dict[str, Union[bool, float, int, str]]) -> Tuple[str, float]:
         """
         Classify code and return result with confidence score
         """
@@ -394,13 +394,15 @@ class ImprovedJSClassifier:
         # Calculate weighted score
         for feature, value in features.items():
             if feature in self.weights:
-                # Convert boolean to float
+                # Convert boolean to float, skip strings
                 if isinstance(value, bool):
-                    value = 1.0 if value else 0.0
-                elif feature == 'module_pattern':
-                    # Skip non-numeric features
+                    numeric_value = 1.0 if value else 0.0
+                elif isinstance(value, (int, float)):
+                    numeric_value = float(value)
+                else:
+                    # Skip non-numeric values like strings
                     continue
-                score += self.weights[feature] * value
+                score += self.weights[feature] * numeric_value
                 
         # Normalize to probability
         probability = 1 / (1 + math.exp(-score / 10))
@@ -416,7 +418,7 @@ class ImprovedJSClassifier:
         return classification, probability
 
 
-def analyze_javascript_code(code: str) -> Tuple[Dict[str, Any], str]:
+def analyze_javascript_code(code: str) -> Tuple[Dict[str, Union[bool, float, int, str]], str]:
     """
     Main JavaScript analysis function that returns features and classification
     """

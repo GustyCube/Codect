@@ -2,7 +2,7 @@ import ast
 import math
 import re
 from collections import Counter
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Tuple, Union
 
 class ImprovedPythonAnalyzer:
     """
@@ -15,7 +15,7 @@ class ImprovedPythonAnalyzer:
         self.tokens = []
         self.tree = None
         
-    def extract_all_features(self) -> Dict[str, Any]:
+    def extract_all_features(self) -> Dict[str, Union[bool, float, int, str]]:
         """Extract comprehensive features for classification"""
         features = {}
         
@@ -34,7 +34,7 @@ class ImprovedPythonAnalyzer:
         
         return features
     
-    def _extract_structural_patterns(self) -> Dict[str, Any]:
+    def _extract_structural_patterns(self) -> Dict[str, Union[bool, float]]:
         """Extract structural code patterns"""
         features = {
             'has_main_guard': False,
@@ -93,7 +93,7 @@ class ImprovedPythonAnalyzer:
         
         return features
     
-    def _extract_naming_patterns(self) -> Dict[str, Any]:
+    def _extract_naming_patterns(self) -> Dict[str, Union[bool, float]]:
         """Analyze variable and function naming patterns"""
         features = {
             'naming_consistency_score': 0.0,
@@ -107,7 +107,7 @@ class ImprovedPythonAnalyzer:
             return features
             
         # Collect all names
-        names = []
+        names: List[str] = []
         for node in ast.walk(self.tree):
             if isinstance(node, ast.Name):
                 names.append(node.id)
@@ -135,7 +135,7 @@ class ImprovedPythonAnalyzer:
         
         return features
     
-    def _extract_consistency_metrics(self) -> Dict[str, Any]:
+    def _extract_consistency_metrics(self) -> Dict[str, float]:
         """Measure code consistency (AI tends to be very consistent)"""
         features = {
             'indentation_consistency': 0.0,
@@ -145,7 +145,7 @@ class ImprovedPythonAnalyzer:
         }
         
         # Indentation consistency
-        indents = []
+        indents: List[int] = []
         for line in self.lines:
             if line.strip():
                 indent = len(line) - len(line.lstrip())
@@ -170,7 +170,7 @@ class ImprovedPythonAnalyzer:
         
         return features
     
-    def _extract_code_smell_indicators(self) -> Dict[str, Any]:
+    def _extract_code_smell_indicators(self) -> Dict[str, bool]:
         """Detect code smells and anti-patterns more common in human code"""
         features = {
             'has_todo_comments': False,
@@ -210,7 +210,7 @@ class ImprovedPythonAnalyzer:
         
         return features
     
-    def _extract_ai_specific_patterns(self) -> Dict[str, Any]:
+    def _extract_ai_specific_patterns(self) -> Dict[str, float]:
         """Extract patterns specific to AI-generated code"""
         features = {
             'perfect_pep8_score': 0.0,
@@ -256,7 +256,7 @@ class ImprovedPythonAnalyzer:
     
     def _analyze_import_organization(self) -> float:
         """Score how well imports are organized (AI tends to organize perfectly)"""
-        import_lines = []
+        import_lines: List[Tuple[int, str]] = []
         for i, line in enumerate(self.lines):
             if line.strip().startswith(('import ', 'from ')):
                 import_lines.append((i, line.strip()))
@@ -291,7 +291,7 @@ class ImprovedPythonAnalyzer:
             return 0.0
             
         # Extract statement patterns
-        patterns = []
+        patterns: List[str] = []
         for node in ast.walk(self.tree):
             if isinstance(node, ast.stmt):
                 pattern = type(node).__name__
@@ -318,7 +318,7 @@ class ImprovedPythonAnalyzer:
         variance = sum((x - mean) ** 2 for x in values) / len(values)
         return math.sqrt(variance)
     
-    def _get_default_features(self) -> Dict[str, Any]:
+    def _get_default_features(self) -> Dict[str, Union[bool, float, int]]:
         """Return default features when parsing fails"""
         return {
             'has_main_guard': False,
@@ -388,7 +388,7 @@ class ImprovedClassifier:
             'meaningful_name_ratio': -0.3,  # Good names slightly human
         }
         
-    def classify(self, features: Dict[str, Any]) -> Tuple[str, float]:
+    def classify(self, features: Dict[str, Union[bool, float, int, str]]) -> Tuple[str, float]:
         """
         Classify code and return result with confidence score
         """
@@ -397,10 +397,15 @@ class ImprovedClassifier:
         # Calculate weighted score
         for feature, value in features.items():
             if feature in self.weights:
-                # Convert boolean to float
+                # Convert boolean to float, skip strings
                 if isinstance(value, bool):
-                    value = 1.0 if value else 0.0
-                score += self.weights[feature] * value
+                    numeric_value = 1.0 if value else 0.0
+                elif isinstance(value, (int, float)):
+                    numeric_value = float(value)
+                else:
+                    # Skip non-numeric values like strings
+                    continue
+                score += self.weights[feature] * numeric_value
                 
         # Normalize to probability
         # Using sigmoid to map score to [0, 1]
@@ -417,7 +422,7 @@ class ImprovedClassifier:
         return classification, probability
 
 
-def analyze_python_code(code: str) -> Tuple[Dict[str, Any], str]:
+def analyze_python_code(code: str) -> Tuple[Dict[str, Union[bool, float, int, str]], str]:
     """
     Main analysis function that returns features and classification
     """
