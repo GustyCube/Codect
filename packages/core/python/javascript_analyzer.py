@@ -295,11 +295,13 @@ class ImprovedJavaScriptAnalyzer:
 
         return features
 
-    def _is_camelCase(self, name: str) -> bool:
+    @staticmethod
+    def _is_camelCase(name: str) -> bool:
         """Check if name follows camelCase convention"""
         return bool(re.match(r'^[a-z][a-zA-Z0-9]*$', name))
 
-    def _is_snake_case(self, name: str) -> bool:
+    @staticmethod
+    def _is_snake_case(name: str) -> bool:
         """Check if name follows snake_case convention"""
         return bool(re.match(r'^[a-z_][a-z0-9_]*$', name))
 
