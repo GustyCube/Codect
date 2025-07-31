@@ -1,0 +1,17 @@
+{
+  "name": "@codect/api",
+  "version": "1.0.0",
+  "description": "Codect API server",
+  "scripts": {
+    "dev": "nodemon --exec 'python' main.py",
+    "start": "python main.py",
+    "test": "pytest",
+    "lint": "ruff check ."
+  },
+  "dependencies": {
+    "@codect/core": "^1.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  }
+}

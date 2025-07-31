@@ -1,0 +1,18 @@
+{
+  "name": "codect",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "lerna run build",
+    "dev": "lerna run dev --parallel",
+    "test": "lerna run test",
+    "lint": "lerna run lint",
+    "clean": "lerna clean --yes && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "lerna": "^8.1.2"
+  }
+}
