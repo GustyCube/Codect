@@ -8,13 +8,13 @@ def main():
     if len(sys.argv) < 3:
         print(json.dumps({"error": "Missing arguments"}))
         sys.exit(1)
-    
+
     language = sys.argv[1]
     mode = sys.argv[2]  # 'basic' or 'detailed'
-    
+
     # Read code from stdin
     code = sys.stdin.read()
-    
+
     try:
         if language == 'python':
             features, classification = analyze_python_code(code)
@@ -23,9 +23,9 @@ def main():
         else:
             print(json.dumps({"error": f"Unsupported language: {language}"}))
             sys.exit(1)
-        
+
         result = 1 if classification == "AI-Generated Code" else 0
-        
+
         if mode == 'basic':
             response = {
                 "result": result,
@@ -44,7 +44,7 @@ def main():
                 "language": language,
                 "features": features
             }
-        
+
         print(json.dumps(response))
     except Exception as e:
         print(json.dumps({"error": str(e)}))
