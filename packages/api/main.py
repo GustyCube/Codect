@@ -62,17 +62,17 @@ async def basic_analysis(request: CodeAnalysisRequest):
     """
     try:
         language = request.language.lower()
-        
+
         if language == 'python':
             features, classification = analyze_python_code(request.code)
         elif language == 'javascript':
             features, classification = analyze_javascript_code(request.code)
         else:
             raise HTTPException(status_code=400, detail=f"Unsupported language: {language}")
-        
+
         result = 1 if classification == "AI-Generated Code" else 0
         return BasicAnalysisResponse(result=result)
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -83,23 +83,23 @@ async def premium_analysis(request: CodeAnalysisRequest):
     """
     try:
         language = request.language.lower()
-        
+
         if language == 'python':
             features, classification = analyze_python_code(request.code)
         elif language == 'javascript':
             features, classification = analyze_javascript_code(request.code)
         else:
             raise HTTPException(status_code=400, detail=f"Unsupported language: {language}")
-        
+
         result = 1 if classification == "AI-Generated Code" else 0
-        
+
         return DetailedAnalysisResponse(
             result=result,
             language=language,
             classification=classification,
             features=features
         )
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
