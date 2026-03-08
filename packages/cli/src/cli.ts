@@ -51,14 +51,18 @@ function displayResults(result: any, detailed: boolean = false) {
   });
 
   // Classification result with color
-  const isAI = result.result === 1;
-  const classificationColor = isAI ? chalk.red : chalk.green;
-  const classificationText = isAI ? 'AI-Generated' : 'Human-Written';
+  const classificationText = result.classification ?? (result.result === 1 ? 'AI-Generated Code' : 'Human-Written Code');
+  const classificationColor = classificationText.includes('AI')
+    ? chalk.red
+    : classificationText.includes('Human')
+      ? chalk.green
+      : chalk.yellow;
+  const confidence = result.features?.confidence;
   
   table.push(
     ['Classification', classificationColor.bold(classificationText)],
     ['Language', chalk.yellow(result.language)],
-    ['Confidence', result.classification]
+    ['Confidence', confidence != null ? chalk.white(`${(confidence * 100).toFixed(1)}%`) : chalk.dim('N/A')]
   );
 
   if (detailed && result.features) {

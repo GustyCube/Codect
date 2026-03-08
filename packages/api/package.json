@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "nodemon --exec 'python' main.py",
     "start": "python main.py",
-    "test": "pytest",
+    "test": "python3 -c \"import sys, unittest; suite = unittest.defaultTestLoader.discover('.', pattern='test_*.py'); result = unittest.TextTestRunner().run(suite); sys.exit(0 if result.wasSuccessful() else 1)\"",
     "lint": "ruff check ."
   },
   "dependencies": {

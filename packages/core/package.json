@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "test": "jest",
+    "test": "python3 -m unittest discover -s tests -p 'test_*.py'",
     "lint": "eslint src --ext .ts"
   },
   "dependencies": {

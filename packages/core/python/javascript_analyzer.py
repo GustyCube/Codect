@@ -1,21 +1,69 @@
 import re
-import json
-import math
-from collections import Counter
 from typing import Dict, List, Tuple, Union
 
+from common_metrics import (
+    aggregate_chunk_results,
+    build_text_metrics,
+    classify_signals,
+    dominant_ratio,
+    indentation_consistency,
+    normalized_count,
+    pattern_repetition,
+    quote_consistency_from_strings,
+    saturate,
+    split_code_into_chunks,
+    tokenize_generic,
+)
+
+
+FeatureValue = Union[bool, float, int, str, List[str]]
+
+
 class ImprovedJavaScriptAnalyzer:
-    """Enhanced JavaScript analyzer that detects AI-generated patterns"""
+    """JavaScript feature extractor for heuristic AI-vs-human scoring."""
+
+    AI_WEIGHTS = {
+        "generic_example_score": 1.5,
+        "example_usage_score": 1.2,
+        "placeholder_score": 1.0,
+        "excessive_comments_ratio": 0.7,
+        "function_style_consistency": 0.5,
+        "semicolon_consistency": 0.4,
+        "indentation_consistency": 0.4,
+        "quote_consistency": 0.3,
+        "pattern_repetition_score": 0.7,
+        "line_length_uniformity": 0.3,
+    }
+
+    HUMAN_WEIGHTS = {
+        "todo_comment_score": 1.6,
+        "debugger_score": 1.4,
+        "commented_code_score": 1.1,
+        "alert_score": 0.9,
+        "eval_score": 0.8,
+        "var_declaration_score": 0.7,
+        "callback_hell_score": 0.9,
+        "jquery_score": 0.9,
+        "console_log_score": 0.6,
+        "single_letter_var_ratio": 0.4,
+        "long_line_score": 0.4,
+    }
 
     def __init__(self, code: str):
         self.code = code
         self.lines = code.splitlines()
+        self.tokens = tokenize_generic(code)
+        self.comment_lines = self._count_comment_lines()
 
-    def extract_all_features(self) -> Dict[str, Union[bool, float, int, str]]:
-        """Extract comprehensive features for classification"""
-        features = {}
+    def extract_all_features(self) -> Dict[str, FeatureValue]:
+        features: Dict[str, FeatureValue] = {
+            "function_count": self._count_functions(),
+            "loop_count": self._count_loops(),
+            "try_except_count": self._count_try_blocks(),
+            "max_ast_depth": self._calculate_brace_depth(),
+        }
 
-        # Extract different feature categories
+        features.update(build_text_metrics(self.code, self.tokens, self.comment_lines))
         features.update(self._extract_structural_patterns())
         features.update(self._extract_naming_patterns())
         features.update(self._extract_consistency_metrics())
@@ -25,404 +73,278 @@ class ImprovedJavaScriptAnalyzer:
 
         return features
 
-    def _extract_structural_patterns(self) -> Dict[str, Union[bool, float]]:
-        """Extract JavaScript structural patterns"""
-        features = {
-            'uses_arrow_functions': False,
-            'uses_async_await': False,
-            'uses_destructuring': False,
-            'uses_template_literals': False,
-            'uses_spread_operator': False,
-            'uses_optional_chaining': False,
-            'has_iife': False,
-            'function_style_consistency': 0.0,
-            'import_export_usage': False,
-            'uses_strict_mode': False,
+    def _extract_structural_patterns(self) -> Dict[str, FeatureValue]:
+        return {
+            "uses_arrow_functions": "=>" in self.code,
+            "uses_async_await": bool(re.search(r"\basync\b|\bawait\b", self.code)),
+            "uses_destructuring": bool(re.search(r"(?:const|let)\s*[{[][^}\]]+[}\]]\s*=", self.code)),
+            "uses_template_literals": bool(re.search(r"`[^`]*\$\{[^}]+\}", self.code)),
+            "uses_spread_operator": "..." in self.code,
+            "uses_optional_chaining": "?." in self.code,
+            "has_iife": bool(re.search(r"\(\s*function\s*\([^)]*\)\s*{", self.code)),
+            "import_export_usage": bool(re.search(r"^\s*(import|export)\s+", self.code, re.MULTILINE)),
+            "uses_strict_mode": bool(re.search(r'["\']use strict["\']', self.code)),
+            "function_style_consistency": self._calculate_function_consistency(),
+            "pattern_repetition_score": pattern_repetition(
+                re.findall(r"\b(if|for|while|function|const|let|var|return|class|try|catch)\b", self.code)
+            ),
         }
 
-        # Arrow functions
-        arrow_pattern = re.compile(r'=>')
-        features['uses_arrow_functions'] = bool(arrow_pattern.search(self.code))
-
-        # Async/await
-        async_pattern = re.compile(r'\basync\s+|await\s+')
-        features['uses_async_await'] = bool(async_pattern.search(self.code))
-
-        # Destructuring
-        destructure_pattern = re.compile(r'const\s*\{[^}]+\}\s*=|const\s*\[[^\]]+\]\s*=')
-        features['uses_destructuring'] = bool(destructure_pattern.search(self.code))
-
-        # Template literals
-        template_pattern = re.compile(r'`[^`]*\$\{[^}]+\}[^`]*`')
-        features['uses_template_literals'] = bool(template_pattern.search(self.code))
-
-        # Spread operator
-        spread_pattern = re.compile(r'\.\.\.')
-        features['uses_spread_operator'] = bool(spread_pattern.search(self.code))
-
-        # Optional chaining
-        optional_pattern = re.compile(r'\?\.')
-        features['uses_optional_chaining'] = bool(optional_pattern.search(self.code))
-
-        # IIFE (Immediately Invoked Function Expression)
-        iife_pattern = re.compile(r'\(\s*function\s*\([^)]*\)\s*\{[^}]+\}\s*\)\s*\(')
-        features['has_iife'] = bool(iife_pattern.search(self.code))
-
-        # Import/Export
-        import_export_pattern = re.compile(r'^\s*(import|export)\s+', re.MULTILINE)
-        features['import_export_usage'] = bool(import_export_pattern.search(self.code))
-
-        # Strict mode
-        strict_pattern = re.compile(r'["\']use strict["\']')
-        features['uses_strict_mode'] = bool(strict_pattern.search(self.code))
-
-        # Function style consistency
-        features['function_style_consistency'] = self._calculate_function_consistency()
-
-        return features
-
-    def _extract_naming_patterns(self) -> Dict[str, Union[bool, float]]:
-        """Analyze JavaScript naming patterns"""
-        features = {
-            'uses_camelCase_ratio': 0.0,
-            'uses_snake_case_ratio': 0.0,
-            'meaningful_name_ratio': 0.0,
-            'single_letter_var_ratio': 0.0,
-            'avg_name_length': 0.0,
-            'uses_dollar_sign': False,
-            'uses_underscore_prefix': False,
-        }
-
-        # Extract variable and function names
-        var_pattern = re.compile(r'(?:var|let|const|function)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)')
-        names: List[str] = var_pattern.findall(self.code)
+    def _extract_naming_patterns(self) -> Dict[str, FeatureValue]:
+        names = re.findall(
+            r"(?:var|let|const|function|class)\s+([A-Za-z_$][A-Za-z0-9_$]*)",
+            self.code,
+        )
+        names.extend(re.findall(r"\b([A-Za-z_$][A-Za-z0-9_$]*)\s*=>", self.code))
 
         if not names:
-            return features
+            return {
+                "uses_camel_case_ratio": 0.0,
+                "uses_snake_case_ratio": 0.0,
+                "meaningful_name_ratio": 0.0,
+                "single_letter_var_ratio": 0.0,
+                "avg_name_length": 0.0,
+                "naming_consistency_score": 0.0,
+            }
 
-        # CamelCase vs snake_case
-        camelCase_count = sum(1 for name in names if self._is_camelCase(name))
+        camel_case_count = sum(1 for name in names if self._is_camel_case(name))
         snake_case_count = sum(1 for name in names if self._is_snake_case(name))
+        plain_lower_count = sum(1 for name in names if name.islower() and "_" not in name and "$" not in name)
+        meaningful_names = [
+            name
+            for name in names
+            if len(name) > 3 and name.lower() not in {"tmp", "temp", "var", "val", "res", "ret", "obj", "item", "data", "arr"}
+        ]
+        single_letter_names = [name for name in names if len(name) == 1 and name not in "ijkxy"]
 
-        features['uses_camelCase_ratio'] = camelCase_count / len(names)
-        features['uses_snake_case_ratio'] = snake_case_count / len(names)
-
-        # Single letter variables
-        single_letter = [n for n in names if len(n) == 1 and n not in 'ijkxy']
-        features['single_letter_var_ratio'] = len(single_letter) / len(names)
-
-        # Average name length
-        features['avg_name_length'] = sum(len(n) for n in names) / len(names)
-
-        # Meaningful names
-        common_meaningless = {'tmp', 'temp', 'var', 'val', 'res', 'ret', 'obj', 'item', 'data', 'arr'}
-        meaningful = [n for n in names if len(n) > 3 and n.lower() not in common_meaningless]
-        features['meaningful_name_ratio'] = len(meaningful) / len(names)
-
-        # Special naming conventions
-        features['uses_dollar_sign'] = any('$' in name for name in names)
-        features['uses_underscore_prefix'] = any(name.startswith('_') for name in names)
-
-        return features
-
-    def _extract_consistency_metrics(self) -> Dict[str, float]:
-        """Measure JavaScript code consistency"""
-        features = {
-            'semicolon_consistency': 0.0,
-            'quote_consistency': 0.0,
-            'indentation_consistency': 0.0,
-            'bracket_style_consistency': 0.0,
-            'pattern_repetition_score': 0.0,
+        return {
+            "uses_camel_case_ratio": camel_case_count / len(names),
+            "uses_snake_case_ratio": snake_case_count / len(names),
+            "meaningful_name_ratio": len(meaningful_names) / len(names),
+            "single_letter_var_ratio": len(single_letter_names) / len(names),
+            "avg_name_length": sum(len(name) for name in names) / len(names),
+            "naming_consistency_score": dominant_ratio(
+                [camel_case_count, snake_case_count, plain_lower_count]
+            ),
         }
 
-        # Semicolon consistency
-        lines_needing_semicolon = []
+    def _extract_consistency_metrics(self) -> Dict[str, FeatureValue]:
+        string_tokens = re.findall(r"'[^'\n]*'|\"[^\"\n]*\"|`[^`\n]*`", self.code)
+
+        semicolon_candidates = []
         for line in self.lines:
             stripped = line.strip()
-            if stripped and not stripped.endswith(('{', '}', ';', ',', '//', '/*', '*/', '*/')) and \
-               not stripped.startswith(('//', '/*', '*')):
-                lines_needing_semicolon.append(stripped)
+            if not stripped:
+                continue
+            if stripped.startswith(("//", "/*", "*")):
+                continue
+            if stripped.endswith(("{", "}", ",", ":", ";")):
+                continue
+            semicolon_candidates.append(stripped)
 
-        if lines_needing_semicolon:
-            with_semicolon = sum(1 for line in lines_needing_semicolon if line.endswith(';'))
-            features['semicolon_consistency'] = max(with_semicolon, len(lines_needing_semicolon) - with_semicolon) / len(lines_needing_semicolon)
+        with_semicolon = sum(1 for line in semicolon_candidates if line.endswith(";"))
+        semicolon_consistency = (
+            max(with_semicolon, len(semicolon_candidates) - with_semicolon) / len(semicolon_candidates)
+            if semicolon_candidates
+            else 0.0
+        )
 
-        # Quote consistency
-        single_quotes = len(re.findall(r"'[^']*'", self.code))
-        double_quotes = len(re.findall(r'"[^"]*"', self.code))
-        backticks = len(re.findall(r'`[^`]*`', self.code))
+        return {
+            "semicolon_consistency": semicolon_consistency,
+            "quote_consistency": quote_consistency_from_strings(string_tokens),
+            "indentation_consistency": indentation_consistency(self.lines),
+        }
 
-        total_quotes = single_quotes + double_quotes
-        if total_quotes > 0:
-            features['quote_consistency'] = max(single_quotes, double_quotes) / total_quotes
+    def _extract_code_smell_indicators(self) -> Dict[str, FeatureValue]:
+        console_count = len(re.findall(r"console\.(log|debug|warn|error)\s*\(", self.code))
+        debugger_count = len(re.findall(r"\bdebugger\b", self.code))
+        todo_count = len(re.findall(r"//\s*(TODO|FIXME|HACK|XXX|BUG)\b", self.code, re.IGNORECASE))
+        commented_code_count = len(
+            re.findall(r"//\s*(if|for|while|function|const|let|var|return|class)\b", self.code)
+        )
+        alert_count = len(re.findall(r"\balert\s*\(", self.code))
+        eval_count = len(re.findall(r"\beval\s*\(", self.code))
+        var_count = len(re.findall(r"\bvar\s+", self.code))
+        jquery_count = len(re.findall(r"\$\s*\(|jQuery\s*\(", self.code))
+        jquery_count += len(re.findall(r"require\s*\(\s*[\"']jquery[\"']\s*\)", self.code))
+        callback_hell_count = len(
+            re.findall(r"function\s*\([^)]*\)\s*{[^{}]*function\s*\([^)]*\)\s*{", self.code, re.DOTALL)
+        )
+        long_line_count = sum(1 for line in self.lines if len(line.rstrip()) > 100)
 
-        # Indentation consistency
-        indents: List[int] = []
+        return {
+            "has_console_log": console_count > 0,
+            "has_debugger": debugger_count > 0,
+            "has_todo_comments": todo_count > 0,
+            "has_commented_code": commented_code_count > 0,
+            "has_alert": alert_count > 0,
+            "has_eval": eval_count > 0,
+            "has_var_declarations": var_count > 0,
+            "has_long_lines": long_line_count > 0,
+            "has_callback_hell": callback_hell_count > 0,
+            "uses_jquery": jquery_count > 0,
+            "console_log_score": normalized_count(console_count, 3.0),
+            "debugger_score": normalized_count(debugger_count, 1.0),
+            "todo_comment_score": normalized_count(todo_count, 2.0),
+            "commented_code_score": normalized_count(commented_code_count, 2.0),
+            "alert_score": normalized_count(alert_count, 1.0),
+            "eval_score": normalized_count(eval_count, 1.0),
+            "var_declaration_score": normalized_count(var_count, 3.0),
+            "callback_hell_score": normalized_count(callback_hell_count, 1.0),
+            "jquery_score": normalized_count(jquery_count, 1.0),
+            "long_line_score": normalized_count(long_line_count, 3.0),
+        }
+
+    def _extract_ai_specific_patterns(self) -> Dict[str, FeatureValue]:
+        generic_matches = len(
+            re.findall(r"\b(foo|bar|baz|example|sample|demo|tutorial|helper|myFunction|myVariable)\b", self.code, re.IGNORECASE)
+        )
+        example_usage_matches = len(
+            re.findall(r"\b(example|sample|demo|mock)(?:Data|Input|Output)?\b|example usage", self.code, re.IGNORECASE)
+        )
+        placeholder_matches = len(
+            re.findall(r"\b(TODO|FIXME|INSERT|REPLACE|your-|my-)\b", self.code, re.IGNORECASE)
+        )
+        line_comments = sum(1 for line in self.lines if line.strip().startswith("//"))
+
+        return {
+            "generic_example_score": normalized_count(generic_matches, 3.0),
+            "example_usage_score": normalized_count(example_usage_matches, 4.0),
+            "placeholder_score": normalized_count(placeholder_matches, 3.0),
+            "excessive_comments_ratio": saturate(line_comments, 5.0) * saturate(float(line_comments), max(len(self.lines), 1)),
+        }
+
+    def _extract_js_specific_patterns(self) -> Dict[str, FeatureValue]:
+        module_pattern = "none"
+        if re.search(r"module\.exports|exports\.", self.code):
+            module_pattern = "commonjs"
+        elif re.search(r"export\s+(default|const|function|class)|import\s+.*\s+from", self.code):
+            module_pattern = "es6"
+
+        return {
+            "uses_react_patterns": bool(re.search(r"(useState|useEffect|React\.|jsx|className=)", self.code)),
+            "uses_node_patterns": bool(re.search(r"(require\s*\(|module\.exports|process\.|__dirname|__filename)", self.code)),
+            "uses_typescript_patterns": bool(
+                re.search(r"(@param\s*{|@returns\s*{|:\s*(string|number|boolean)|interface\s+\w+)", self.code)
+            ),
+            "module_pattern": module_pattern,
+        }
+
+    def _count_comment_lines(self) -> int:
+        count = 0
+        in_block_comment = False
+
         for line in self.lines:
-            if line.strip():
-                indent = len(line) - len(line.lstrip())
-                if indent > 0:
-                    indents.append(indent)
+            stripped = line.strip()
+            if not stripped:
+                continue
 
-        if indents:
-            # Check if all indents are multiples of 2 or 4
-            base_indent = 2 if any(i % 2 == 0 and i % 4 != 0 for i in indents) else 4
-            consistent = all(i % base_indent == 0 for i in indents)
-            features['indentation_consistency'] = 1.0 if consistent else 0.5
+            if in_block_comment:
+                count += 1
+                if "*/" in stripped:
+                    in_block_comment = False
+                continue
 
-        # Pattern repetition
-        features['pattern_repetition_score'] = self._calculate_pattern_repetition()
+            if stripped.startswith("//"):
+                count += 1
+                continue
 
-        return features
+            if stripped.startswith("/*"):
+                count += 1
+                if "*/" not in stripped:
+                    in_block_comment = True
 
-    def _extract_code_smell_indicators(self) -> Dict[str, bool]:
-        """Detect JavaScript code smells"""
-        features = {
-            'has_console_log': False,
-            'has_debugger': False,
-            'has_todo_comments': False,
-            'has_commented_code': False,
-            'has_alert': False,
-            'has_eval': False,
-            'has_var_declarations': False,
-            'has_magic_strings': False,
-            'has_long_lines': False,
-            'has_callback_hell': False,
-        }
+        return count
 
-        # Console.log
-        console_pattern = re.compile(r'console\.(log|debug|warn|error)')
-        features['has_console_log'] = bool(console_pattern.search(self.code))
+    def _count_functions(self) -> int:
+        named_functions = len(re.findall(r"\bfunction\b", self.code))
+        arrow_functions = len(re.findall(r"=>", self.code))
+        return named_functions + arrow_functions
 
-        # Debugger statements
-        debugger_pattern = re.compile(r'\bdebugger\s*;')
-        features['has_debugger'] = bool(debugger_pattern.search(self.code))
+    def _count_loops(self) -> int:
+        return len(re.findall(r"\b(for|while|do)\b", self.code))
 
-        # TODO comments
-        todo_pattern = re.compile(r'//\s*(TODO|FIXME|HACK|XXX|BUG)', re.IGNORECASE)
-        features['has_todo_comments'] = bool(todo_pattern.search(self.code))
+    def _count_try_blocks(self) -> int:
+        return len(re.findall(r"\btry\b", self.code))
 
-        # Commented code
-        commented_code_pattern = re.compile(r'//\s*(if|for|while|function|const|let|var|return)\s')
-        features['has_commented_code'] = bool(commented_code_pattern.search(self.code))
+    def _calculate_function_consistency(self) -> float:
+        traditional = len(re.findall(r"\bfunction\s+\w+\s*\(", self.code))
+        anonymous = len(re.findall(r"\bfunction\s*\(", self.code)) - traditional
+        arrow = len(re.findall(r"=>", self.code))
+        return dominant_ratio([traditional, anonymous, arrow])
 
-        # Alert
-        alert_pattern = re.compile(r'\balert\s*\(')
-        features['has_alert'] = bool(alert_pattern.search(self.code))
+    def _calculate_brace_depth(self) -> int:
+        depth = 0
+        max_depth = 0
+        in_single = False
+        in_double = False
+        in_backtick = False
+        in_line_comment = False
+        in_block_comment = False
+        previous = ""
 
-        # Eval
-        eval_pattern = re.compile(r'\beval\s*\(')
-        features['has_eval'] = bool(eval_pattern.search(self.code))
+        for index, char in enumerate(self.code):
+            next_char = self.code[index + 1] if index + 1 < len(self.code) else ""
 
-        # Var declarations (vs const/let)
-        var_pattern = re.compile(r'\bvar\s+')
-        features['has_var_declarations'] = bool(var_pattern.search(self.code))
+            if in_line_comment:
+                if char == "\n":
+                    in_line_comment = False
+                previous = char
+                continue
 
-        # Long lines
-        features['has_long_lines'] = any(len(line) > 100 for line in self.lines)
+            if in_block_comment:
+                if previous == "*" and char == "/":
+                    in_block_comment = False
+                previous = char
+                continue
 
-        # Callback hell detection (nested callbacks)
-        callback_pattern = re.compile(r'function\s*\([^)]*\)\s*\{[^}]*function\s*\([^)]*\)\s*\{')
-        features['has_callback_hell'] = bool(callback_pattern.search(self.code))
+            if not in_single and not in_double and not in_backtick:
+                if char == "/" and next_char == "/":
+                    in_line_comment = True
+                    previous = char
+                    continue
+                if char == "/" and next_char == "*":
+                    in_block_comment = True
+                    previous = char
+                    continue
 
-        return features
+            if char == "'" and not in_double and not in_backtick and previous != "\\":
+                in_single = not in_single
+            elif char == '"' and not in_single and not in_backtick and previous != "\\":
+                in_double = not in_double
+            elif char == "`" and not in_single and not in_double and previous != "\\":
+                in_backtick = not in_backtick
+            elif not in_single and not in_double and not in_backtick:
+                if char == "{":
+                    depth += 1
+                    max_depth = max(max_depth, depth)
+                elif char == "}":
+                    depth = max(depth - 1, 0)
 
-    def _extract_ai_specific_patterns(self) -> Dict[str, Union[bool, float]]:
-        """Extract patterns specific to AI-generated JavaScript"""
-        features = {
-            'perfect_formatting_score': 0.0,
-            'generic_example_score': 0.0,
-            'placeholder_score': 0.0,
-            'uniform_complexity': 0.0,
-            'has_example_data': False,
-            'excessive_comments_ratio': 0.0,
-        }
+            previous = char
 
-        # Generic examples
-        generic_pattern = re.compile(r'\b(foo|bar|baz|example|test|sample|demo|myFunction|myVariable)\b', re.IGNORECASE)
-        generic_matches = len(generic_pattern.findall(self.code))
-        features['generic_example_score'] = min(generic_matches / max(len(self.lines), 1), 1.0)
-
-        # Example data
-        example_data_pattern = re.compile(r'(John Doe|jane@example\.com|Lorem ipsum|example\.com|123 Main St)')
-        features['has_example_data'] = bool(example_data_pattern.search(self.code))
-
-        # Placeholder patterns
-        placeholder_pattern = re.compile(r'(Your|TODO:|FIXME:|INSERT|REPLACE|your-|my-)', re.IGNORECASE)
-        features['placeholder_score'] = min(len(placeholder_pattern.findall(self.code)) / 10, 1.0)
-
-        # Excessive comments (AI often over-comments)
-        comment_lines = sum(1 for line in self.lines if line.strip().startswith('//'))
-        if len(self.lines) > 0:
-            features['excessive_comments_ratio'] = comment_lines / len(self.lines)
-
-        return features
-
-    def _extract_js_specific_patterns(self) -> Dict[str, Union[bool, str]]:
-        """Extract JavaScript-specific patterns"""
-        features = {
-            'uses_jquery': False,
-            'uses_react_patterns': False,
-            'uses_node_patterns': False,
-            'uses_typescript_patterns': False,
-            'has_package_json_refs': False,
-            'module_pattern': 'none',  # none, commonjs, es6
-        }
-
-        # jQuery
-        jquery_pattern = re.compile(r'\$\s*\(|jQuery\s*\(')
-        features['uses_jquery'] = bool(jquery_pattern.search(self.code))
-
-        # React patterns
-        react_pattern = re.compile(r'(useState|useEffect|React\.|jsx|className=)')
-        features['uses_react_patterns'] = bool(react_pattern.search(self.code))
-
-        # Node.js patterns
-        node_pattern = re.compile(r'(require\s*\(|module\.exports|process\.|__dirname|__filename)')
-        features['uses_node_patterns'] = bool(node_pattern.search(self.code))
-
-        # TypeScript patterns (in comments or JSDoc)
-        ts_pattern = re.compile(r'(@param\s*\{|@returns\s*\{|: string|: number|: boolean|interface\s+\w+)')
-        features['uses_typescript_patterns'] = bool(ts_pattern.search(self.code))
-
-        # Module pattern detection
-        if re.search(r'module\.exports|exports\.', self.code):
-            features['module_pattern'] = 'commonjs'
-        elif re.search(r'export\s+(default|const|function|class)|import\s+.*\s+from', self.code):
-            features['module_pattern'] = 'es6'
-
-        return features
+        return max_depth
 
     @staticmethod
-    def _is_camelCase(name: str) -> bool:
-        """Check if name follows camelCase convention"""
-        return bool(re.match(r'^[a-z][a-zA-Z0-9]*$', name))
+    def _is_camel_case(name: str) -> bool:
+        return bool(re.match(r"^[a-z][a-zA-Z0-9]*$", name)) and "_" not in name
 
     @staticmethod
     def _is_snake_case(name: str) -> bool:
-        """Check if name follows snake_case convention"""
-        return bool(re.match(r'^[a-z_][a-z0-9_]*$', name))
-
-    def _calculate_function_consistency(self) -> float:
-        """Calculate consistency in function declaration style"""
-        # Count different function styles
-        traditional = len(re.findall(r'function\s+\w+\s*\(', self.code))
-        arrow = len(re.findall(r'=>', self.code))
-        anonymous = len(re.findall(r'function\s*\(', self.code)) - traditional
-
-        total = traditional + arrow + anonymous
-        if total == 0:
-            return 0.0
-
-        # Higher score means more consistent (one style dominates)
-        max_style = max(traditional, arrow, anonymous)
-        return max_style / total
-
-    def _calculate_pattern_repetition(self) -> float:
-        """Calculate code pattern repetition"""
-        # Extract code structure patterns
-        patterns: List[str] = []
-
-        # Simple pattern extraction based on keywords
-        keyword_pattern = re.compile(r'\b(if|for|while|function|const|let|var|return|class)\b')
-
-        for line in self.lines:
-            keywords = keyword_pattern.findall(line)
-            if keywords:
-                patterns.extend(keywords)
-
-        if len(patterns) < 5:
-            return 0.0
-
-        # Look for repeated sequences
-        pattern_counts = Counter()
-        for i in range(len(patterns) - 2):
-            trigram = tuple(patterns[i:i+3])
-            pattern_counts[trigram] += 1
-
-        # High repetition score if same patterns appear frequently
-        max_count = max(pattern_counts.values()) if pattern_counts else 0
-        return min(max_count / len(patterns), 1.0)
+        return bool(re.match(r"^[a-z_][a-z0-9_]*$", name))
 
 
-class ImprovedJSClassifier:
-    """Weighted classification system for JavaScript"""
+def analyze_javascript_code(code: str) -> Tuple[Dict[str, FeatureValue], str]:
+    chunk_results = []
 
-    def __init__(self):
-        # Feature weights based on importance
-        self.weights = {
-            # Strong AI indicators
-            'function_style_consistency': 2.0,
-            'semicolon_consistency': 1.5,
-            'quote_consistency': 1.5,
-            'indentation_consistency': 2.0,
-            'pattern_repetition_score': 3.0,
-            'generic_example_score': 3.5,
-            'placeholder_score': 3.0,
-            'has_example_data': 2.5,
-            'excessive_comments_ratio': 2.0,
+    for chunk in split_code_into_chunks(code):
+        analyzer = ImprovedJavaScriptAnalyzer(chunk)
+        features = analyzer.extract_all_features()
+        classification, _, _ = classify_signals(
+            features,
+            ImprovedJavaScriptAnalyzer.AI_WEIGHTS,
+            ImprovedJavaScriptAnalyzer.HUMAN_WEIGHTS,
+        )
+        chunk_results.append((features, classification))
 
-            # Strong human indicators
-            'has_console_log': -2.5,
-            'has_debugger': -3.0,
-            'has_todo_comments': -3.0,
-            'has_commented_code': -2.0,
-            'has_alert': -2.0,
-            'has_eval': -1.5,
-            'has_var_declarations': -1.0,
-            'has_long_lines': -1.0,
-            'has_callback_hell': -1.5,
-            'single_letter_var_ratio': -1.0,
-
-            # Context-dependent
-            'uses_arrow_functions': 0.3,  # Modern JS
-            'uses_async_await': 0.3,
-            'uses_destructuring': 0.2,
-            'uses_template_literals': 0.2,
-            'uses_jquery': -0.5,  # Older human code
-            'meaningful_name_ratio': -0.5,
-        }
-
-    def classify(self, features: Dict[str, Union[bool, float, int, str]]) -> Tuple[str, float]:
-        """Classify code and return result with confidence score"""
-        score = 0.0
-
-        # Calculate weighted score
-        for feature, value in features.items():
-            if feature in self.weights:
-                # Convert boolean to float, skip strings
-                if isinstance(value, bool):
-                    numeric_value = 1.0 if value else 0.0
-                elif isinstance(value, (int, float)):
-                    numeric_value = float(value)
-                else:
-                    # Skip non-numeric values like strings
-                    continue
-                score += self.weights[feature] * numeric_value
-
-        # Normalize to probability
-        probability = 1 / (1 + math.exp(-score / 10))
-
-        # Classification with confidence
-        if probability > 0.7:
-            classification = "AI-Generated Code"
-        elif probability < 0.3:
-            classification = "Human-Written Code"
-        else:
-            classification = "Uncertain (Mixed Signals)"
-
-        return classification, probability
-
-
-def analyze_javascript_code(code: str) -> Tuple[Dict[str, Union[bool, float, int, str]], str]:
-    """Main JavaScript analysis function that returns features and classification"""
-    analyzer = ImprovedJavaScriptAnalyzer(code)
-    features = analyzer.extract_all_features()
-
-    classifier = ImprovedJSClassifier()
-    classification, confidence = classifier.classify(features)
-
-    # Add confidence to features for API compatibility
-    features['confidence'] = confidence
-
-    return features, classification
+    return aggregate_chunk_results(chunk_results)
