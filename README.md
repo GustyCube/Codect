@@ -2,7 +2,7 @@
 [![DeepSource](https://app.deepsource.com/gh/GustyCube/Codect.svg/?label=active+issues&show_trend=true&token=UOiRrqqUZoWYwfD_tPL8ifiy)](https://app.deepsource.com/gh/GustyCube/Codect/) <a href="LICENSE"><img src="https://img.shields.io/github/license/GustyCube/Codect" alt="License"></a>
 
 ## Overview
-Codect is a free and open-source tool designed to detect whether a piece of code was written by an AI or a human. It supports multiple programming languages and provides detailed insights based on various code features such as entropy, comment ratio, AST complexity, and more.
+Codect is a free and open-source tool designed to detect whether a piece of code was written by an AI or a human. It currently supports Python and JavaScript, and reports both a classification and supporting heuristics such as token entropy, comment density, structural complexity, and signal strength.
 
 This monorepo contains three main packages:
 - **@codect/core**: Core detection algorithms and language analysis
@@ -11,9 +11,10 @@ This monorepo contains three main packages:
 
 ## Features
 - **Multi-Language Support**: Detect AI-generated code in Python and JavaScript
-- **Entropy & Complexity Analysis**: Uses token entropy and AST depth to determine AI-generated patterns
-- **Comment Ratio Evaluation**: Analyzes documentation habits in code
-- **Function & Loop Detection**: Evaluates structure complexity
+- **Chunk-Level Detection**: Splits longer files into chunks and aggregates their results instead of relying on a single whole-file score
+- **Low-Signal Abstention**: Returns `Uncertain (Mixed Signals)` for snippets that do not contain enough evidence
+- **Entropy & Complexity Analysis**: Uses token entropy, nesting depth, naming patterns, and formatting consistency as part of the score
+- **Human vs AI Signals**: Tracks both AI-like and human-like indicators such as example-heavy code, TODO comments, debug statements, and repeated structure
 - **Beautiful CLI**: Interactive terminal UI with colors and ASCII art
 - **Fast API**: High-performance REST API with FastAPI
 - **Modular Architecture**: Clean separation of concerns with monorepo structure
@@ -65,7 +66,7 @@ Features:
 - Interactive mode with menu navigation
 - Beautiful ASCII art logo with gradient colors
 - Colored output and progress spinners
-- Detailed analysis with feature breakdown
+- Detailed analysis with feature breakdown and confidence
 - Support for both file and snippet analysis
 
 ### API Server
@@ -115,11 +116,31 @@ npm run build
 ```
 
 ## How It Works
-1. The code is **tokenized**, and entropy is measured.
-2. **Comment ratio** is calculated to analyze documentation habits.
-3. **AST parsing** extracts function, loop, and exception counts.
-4. The system **assigns a score** based on heuristic rules.
-5. If the score exceeds a threshold, the code is flagged as **AI-generated**.
+1. The code is split into **chunks** so larger files can be evaluated on local signal instead of one global pass.
+2. Each chunk is **tokenized** and measured for entropy, comment ratio, naming patterns, formatting consistency, and structural complexity.
+3. Language-specific analyzers extract **Python AST metrics** or **JavaScript structural metrics** such as function count, loop count, try/catch usage, and nesting depth.
+4. The detector computes both **AI-oriented** and **human-oriented** heuristic scores for each chunk.
+5. Results are **aggregated across chunks** into a final classification, confidence score, and supporting signals.
+6. If the snippet is too short or the heuristics conflict, the detector abstains with **`Uncertain (Mixed Signals)`**.
+
+## Testing
+The repository now includes regression tests for the detector in [`packages/core/tests`](./packages/core/tests). The current suite covers:
+- AI-like and human-like Python samples
+- AI-like and human-like JavaScript samples
+- Low-signal abstention behavior
+- End-to-end validation of the Python analysis bridge used by the TypeScript wrapper
+
+Run the full workspace tests with:
+
+```bash
+npm test
+```
+
+Or run the detector regression suite directly with:
+
+```bash
+python3 -m unittest discover -s packages/core/tests -p 'test_*.py'
+```
 
 ## Contributing
 We welcome contributions! Feel free to:
