@@ -13,6 +13,6 @@
     "clean": "lerna clean --yes && rm -rf node_modules"
   },
   "devDependencies": {
-    "lerna": "^8.1.2"
+    "lerna": "^9.0.7"
   }
 }
